@@ -3,19 +3,19 @@ import { AppController } from './app.controller';
 import getFormData from './getFormData';
 import * as qs from 'qs';
 import { LoginService } from './login.service';
+import { attendance } from './interfaces';
 
 describe('AppController', () => {
-  let appController: AppController;
   let loginService: LoginService;
-  let username = process.env.ACCSOFT_ID;
-  let password = process.env.PASSWORD;
+  const username = process.env.ACCSOFT_ID;
+  const password = process.env.PASSWORD;
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [LoginService],
     }).compile();
     loginService = await app.resolve<LoginService>(LoginService);
-    appController = app.get<AppController>(AppController);
+    loginService.setUserCred(username, password, 'lnct');
   });
 
   describe('login', () => {
@@ -44,19 +44,13 @@ describe('AppController', () => {
       expect(response).toHaveProperty('__EVENTTARGET', '');
       expect(response).toHaveProperty('__EVENTARGUMENT', '');
       expect(response).toHaveProperty('__LASTFOCUS', '');
-      expect(response).toHaveProperty('ctl00$cph1$txtStuUser',username);
+      expect(response).toHaveProperty('ctl00$cph1$txtStuUser', username);
       expect(response).toHaveProperty('ctl00$cph1$txtStuPsw', password);
     });
 
     it('It should return a valid login response', async () => {
-      loginService.setCollege('lnct');
-      const response = await loginService.login(
-        username,
-       password,
-        'lnct',
-        false,
-      );
-      expect(response).toHaveProperty('Name','TUSHAR UPADHYAY');
+      const response = await loginService.login(false);
+      expect(response).toHaveProperty('Name', 'TUSHAR UPADHYAY');
       expect(response).toHaveProperty('ImageUrl');
       expect(response).toHaveProperty('Section');
       expect(response).toHaveProperty('Semseter');
@@ -65,4 +59,16 @@ describe('AppController', () => {
       expect(response).toHaveProperty('Gender');
     });
   });
+  describe('attendance',()=>{
+    jest.setTimeout(10000);
+    it('should return valid attendance data',async()=>{
+        const response:attendance = await loginService.getAttendance('attendance');
+        expect(typeof response['Total Lectures']).toBe("number");
+        expect(typeof response.Percentage).toBe('number');
+        expect(typeof response['Present ']).toBe('number');
+        expect(typeof response.Semester).toBe('string');
+        expect(typeof response.DaysNeeded).toBe('number');
+        expect(typeof response.LecturesNeeded).toBe('number');
+    })
+  })
 });

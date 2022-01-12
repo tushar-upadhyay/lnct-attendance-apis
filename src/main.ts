@@ -16,8 +16,7 @@ declare global {
 }
 Number.prototype.round = function (p: number) {
   p = p || 10;
-  let ans: number = parseFloat(this.toFixed(p));
-  if (Math.round(this) === ans) ans += 0.01;
+  const ans: number = parseFloat(this.toFixed(p));
   return ans;
 };
 // dotenv.config({ path: 'src/.env' });
@@ -43,7 +42,7 @@ if (cluster.isMaster) {
   cluster.on('fork', () => {
     console.log('cluster forked');
   });
-  cluster.on('exit', (s) => {
+  cluster.on('exit', () => {
     cluster.fork();
   });
 } else {
