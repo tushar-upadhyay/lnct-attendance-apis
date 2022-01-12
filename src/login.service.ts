@@ -14,7 +14,13 @@ import {
 export class LoginService {
   private college = 'lnct';
   private cookie: string;
-
+  private username: string;
+  private password: string;
+  setUserCred(username: string, password: string, college: string) {
+    this.username = username;
+    this.password = password;
+    this.college = college;
+  }
   headers() {
     return {
       Cookie: this.cookie,
@@ -34,22 +40,12 @@ export class LoginService {
     };
     return urls;
   }
-  setCollege(college) {
-    this.college = college;
-  }
-  async login(
-    username: string,
-    password: string,
-    college: string,
-    loginOnly: boolean,
-  ): Promise<loginResponse> | null {
-    this.college = college;
+  async login(loginOnly: boolean): Promise<loginResponse> | null {
     const formData = await getFormData({
-      username,
-      password,
+      username: this.username,
+      password: this.password,
       url: this.getUrls().login,
     });
-
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
@@ -65,18 +61,13 @@ export class LoginService {
       return;
     }
     response = await axios.get(this.getUrls().dashboard, {
-      headers: { Cookie: cookie },
+      headers: this.headers(),
     });
     return await parseDashboardData(this.getUrls().image, response.data);
   }
 
-  async getAttendance(
-    username: string,
-    password: string,
-    college: string,
-    type: string,
-  ) {
-    await this.login(username, password, college, true);
+  async getAttendance(type: string):Promise<any> {
+    await this.login(true);
     if (type == 'subjectwise') {
       const response = await axios.get(this.getUrls().subject, {
         headers: this.headers(),

@@ -15,17 +15,11 @@ export class AppController {
     if (query.lnctu || query.lnctu == '') {
       college = 'lnctu';
     }
+    this.loginService.setUserCred(username, password, college);
     return res
       .code(200)
       .header('Content-Type', 'application/json; charset=utf-8')
-      .send(
-        await this.loginService.getAttendance(
-          username,
-          password,
-          college,
-          'attendance',
-        ),
-      );
+      .send(await this.loginService.getAttendance('attendance'));
   }
 
   @Get('/api')
@@ -44,14 +38,8 @@ export class AppController {
     if (query.lnctu || query.lnctu == '') {
       college = 'lnctu';
     }
-
-    if (type === 'login')
-      return await this.loginService.login(username, password, college, false);
-    return await this.loginService.getAttendance(
-      username,
-      password,
-      college,
-      type,
-    );
+    this.loginService.setUserCred(username, password, college);
+    if (type === 'login') return await this.loginService.login(false);
+    return await this.loginService.getAttendance(type);
   }
 }

@@ -1,15 +1,19 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { loginResponse } from './interfaces';
+import { attendance, datewise, loginResponse, subjectwise, tilldateattendance } from './interfaces';
 import jsonify from './jsonify';
 export async function parseDashboardData(url, page): Promise<loginResponse> {
   const $ = cheerio.load(page);
-  const streamData = $('#messagesDropdown')
+  let streamData
+  try{
+   streamData = $('#messagesDropdown')
     .text()
     .trim()
-    .split('\n')[2]
-    .trim()
-    .split('-');
+    .split('\n')[2].trim();
+  }
+  catch(err){
+    streamData = "Branch 1"
+  }
   const profileData = $('#userDropdown');
   const Name = profileData.first().text().trim();
   const postFix = profileData
@@ -30,10 +34,11 @@ export async function parseDashboardData(url, page): Promise<loginResponse> {
       responseType: 'json',
     })
   ).data;
-  const Semseter = streamData[1].split('')[1];
+  const r = new RegExp('[0-9]+');
+  const Semseter = streamData.match(r)[0];
   return {
     Name,
-    Branch,
+    Branch:streamData.substring(0,streamData.match(r).index).split(' -')[0],
     Section,
     Gender: Gender['gender'],
     Semseter,
@@ -65,15 +70,12 @@ export function parseFormData(page) {
   return formData;
 }
 
-export function parseMainAttendance(page) {
+export function parseMainAttendance(page):attendance {
   const $ = cheerio.load(page);
   const totalData = $('#ctl00_ContentPlaceHolder1_lbltotperiod').text();
   const total = parseInt(totalData.split(':')[1]);
   const present = parseInt(
     $('#ctl00_ContentPlaceHolder1_lbltotalp').text().split(':')[1],
-  );
-  const absent = parseInt(
-    $('#ctl00_ContentPlaceHolder1_lbltotala').text().split(':')[1],
   );
   const leaves = parseInt(
     $('#ctl00_ContentPlaceHolder1_lbltotall').text().split(':')[1],
@@ -103,7 +105,7 @@ export function parseMainAttendance(page) {
 export function parseSubjectWiseAttendance(page) {
   const $ = cheerio.load(page);
   const trs = $('tr');
-  const result = [];
+  const result:subjectwise = [];
 
   for (let i = 18; i < trs.length; i++) {
     const data = $(trs[i]).find('td');
@@ -120,7 +122,7 @@ export function parseSubjectWiseAttendance(page) {
   return stringify(result);
 }
 
-export function parseDateWiseAttendance(page) {
+export function parseDateWiseAttendance(page):datewise[] {
   const $ = cheerio.load(page);
   const totalData = $('#ctl00_ContentPlaceHolder1_lbltotperiod').text();
   const notApplicable = parseInt(
@@ -128,26 +130,26 @@ export function parseDateWiseAttendance(page) {
   );
   const total = parseInt(totalData.split(':')[1]) + notApplicable;
   const trs = $('tr');
-  const temp = [];
+  const forward:datewise = [];
+  const backward:datewise = [];
   for (let i = 24; i < total + 24; i++) {
     const data = $(trs[i]).find('td');
     const date = $(data[1]).text();
     const subjectName = $(data[3]).text();
     const attendanceStatus = $(data[4]).text();
-    const lastIndex = temp.length - 1;
+    const lastIndex = forward.length - 1;
     const attendanceObject = {};
     attendanceObject[subjectName] = attendanceStatus;
-    const attendanceData = [];
-    if (temp[lastIndex] == undefined || temp[lastIndex].date !== date)
-      temp.push({
+    if (forward[lastIndex] == undefined || forward[lastIndex].date !== date)
+    forward.push({
         date,
         data: [attendanceObject],
       });
-    else temp[lastIndex].data.push(attendanceObject);
+    else forward[lastIndex].data.push(attendanceObject);
   }
-  if (temp.length == 0) {
+  if (forward.length == 0) {
     const date = new Date().toDateString().split(' ');
-    temp.push({
+    forward.push({
       data: [
         {
           'Classes for this semester is yet to begin': '',
@@ -157,7 +159,12 @@ export function parseDateWiseAttendance(page) {
     });
   }
 
-  return [temp, temp.reverse()];
+  for(let i=forward.length-1 ;i>=0;i--){
+      backward.push(forward[i]);
+  }
+
+
+  return [forward,backward];
 }
 
 export function parseTillDateAttendance(page) {
@@ -168,13 +175,13 @@ export function parseTillDateAttendance(page) {
   );
   const total = parseInt(totalData.split(':')[1]) + notApplicable;
   const trs = $('tr');
-  const temp = [];
+  const temp:tilldateattendance = [];
   let totalLectures = 0;
   let present = 0;
   for (let i = 24; i < total + 24; i++) {
     const data = $(trs[i]).find('td');
     const date = $(data[1]).text();
-    const subjectName = $(data[3]).text();
+
     const attendanceStatus: number = $(data[4]).text() == 'A' ? 0 : 1;
     present = present + attendanceStatus;
     totalLectures += 1;

@@ -1,10 +1,4 @@
-import {
-  ExceptionFilter,
-  Catch,
-  HttpException,
-  ArgumentsHost,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
 import axios from 'axios';
 
 @Catch()
