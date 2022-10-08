@@ -6,7 +6,7 @@ This is a Nestjs based application which provides apis to get different data of 
 ### Using the Apis
 You can use the API's in your application to get data
 <b>Base Url -- </b><i> https://newlnct.herokuapp.com/</i>
-##### Basic Attendance (returns a JSON response with attnedance and percentage)
+##### Basic Attendance (returns a JSON response with attnedance and percentage )
 Make a get request to: 
 https://newlnct.herokuapp.com/?username=youraccsoftid&password=yourpassword
 
